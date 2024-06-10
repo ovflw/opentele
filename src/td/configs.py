@@ -176,8 +176,8 @@ class BuiltInDc(BaseObject):  # type: ignore # nocov
     Default DC that is hard-coded
     """
 
-    def __init__(self, id: DcId, ip: str, port: int):
-        self.id = id
+    def __init__(self, id_: DcId, ip: str, port: int):
+        self.id = id_
         self.ip = ip
         self.port = port
 
@@ -333,96 +333,11 @@ class lskType(int):  # nocov
     lskBackgroundOld = 0x14  # no data
     lskSelfSerialized = 0x15  # serialized self
     lskMasksKeys = 0x16  # no data
+    lskCustomEmojiKeys = 0x17  # no data
+    lskSearchSuggestions = 0x18  # no data
+    lskWebviewTokens = 0x19  # data: QByteArray bots, QByteArray other
 
 
 class BotTrustFlag(int):  # nocov
     NoOpenGame = 1 << 0
     Payment = 1 << 1
-
-
-# class QByteArray(QByteArray):
-#     def dump(self):
-
-#         print(f"  ---- hexdump ----: [0x{hex(self.size())}:{self.size()}] ({id(self)})")
-
-#         size = self.size()
-#         data = self.data()
-#         out = ""
-#         asc = ""
-
-#         for i in range(size):
-
-#             if i % 16 == 0:
-#                 if i != 0:
-#                     out += " |  "
-#                     out += asc + "\n"
-#                     asc = ""
-
-#                 out += "  %0.4x " % i
-
-#             out += " %0.2x" % data[i]
-
-#             if (i > 0) and ((i % 8) == 7) and ((i % 16) != 15):
-#                 out += " "
-
-#             if (data[i] < 0x20) or (data[i] > 0x7E):
-#                 asc += "."
-#             else:
-#                 asc += chr(data[i])
-
-#         i = size - 1
-#         if ((i % 16) != 0) and ((i % 16) == (i % 8)):
-#             out += " "
-
-#         while (i % 16) != 0:
-#             out += "   "
-#             i += 1
-
-#         out += " |  "
-#         print(out)
-
-
-# def hexdump(byte: bytes):
-
-#     if isinstance(byte, QByteArray):
-#         byte = byte.data()
-
-#     print(
-#         f"  ---- hexdump ----: [0x{hex(byte.__len__())}:{byte.__len__()}] ({id(byte)})"
-#     )
-
-#     size = byte.__len__()
-#     data = byte
-#     out = ""
-#     asc = ""
-
-#     for i in range(size):
-
-#         if i % 16 == 0:
-#             if i != 0:
-#                 out += " |  "
-#                 out += asc + "\n"
-#                 asc = ""
-
-#             out += "  %0.4x " % i
-
-#         out += " %0.2x" % data[i]
-
-#         if (i > 0) and ((i % 8) == 7) and ((i % 16) != 15):
-#             out += " "
-
-#         if (data[i] < 0x20) or (data[i] > 0x7E):
-#             asc += "."
-#         else:
-#             asc += chr(data[i])
-
-#     i = size - 1
-#     if ((i % 16) != 0) and ((i % 16) == (i % 8)):
-#         out += " "
-
-#     while (i % 16) != 0:
-#         out += "   "
-#         i += 1
-
-#     out += " |  "
-#     print(out)

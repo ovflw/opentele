@@ -9,6 +9,7 @@ from telethon.sessions.abstract import Session
 
 import logging
 
+
 # if TYPE_CHECKING:
 #     from ..opentele import *
 
@@ -30,6 +31,12 @@ class MapData(BaseObject):  # nocov
         self._favedStickersKey = FileKey(0)
         self._archivedStickersKey = FileKey(0)
         self._archivedMasksKey = FileKey(0)
+        self._installedCustomEmojiKey = FileKey(0)
+        self._featuredCustomEmojiKey = FileKey(0)
+        self._archivedCustomEmojiKey = FileKey(0)
+        self._searchSuggestionsKey = FileKey(0)
+        self._webviewStorageTokenBots = FileKey(0)
+        self._webviewStorageTokenOther = FileKey(0)
         self._savedGifsKey = FileKey(0)
         self._recentStickersKeyOld = FileKey(0)
         self._legacyBackgroundKeyDay = FileKey(0)
@@ -109,6 +116,12 @@ class MapData(BaseObject):  # nocov
         installedMasksKey = 0
         recentMasksKey = 0
         archivedMasksKey = 0
+        installedCustomEmojiKey = 0
+        featuredCustomEmojiKey = 0
+        archivedCustomEmojiKey = 0
+        searchSuggestionsKey = 0
+        webviewStorageTokenBots = 0
+        webviewStorageTokenOther = 0
         savedGifsKey = 0
         legacyBackgroundKeyDay = 0
         legacyBackgroundKeyNight = 0
@@ -116,7 +129,9 @@ class MapData(BaseObject):  # nocov
         recentHashtagsAndBotsKey = 0
         exportSettingsKey = 0
 
-        while not map.stream.atEnd():
+        is_finished = False
+
+        while not is_finished and not map.stream.atEnd():
             keyType = map.stream.readUInt32()
 
             if keyType == lskType.lskDraft:
@@ -140,9 +155,9 @@ class MapData(BaseObject):  # nocov
                     draftCursorsMap[peerId] = key
 
             elif (
-                (keyType == lskType.lskLegacyImages)
-                or (keyType == lskType.lskLegacyStickerImages)
-                or (keyType == lskType.lskLegacyAudios)
+                    (keyType == lskType.lskLegacyImages)
+                    or (keyType == lskType.lskLegacyStickerImages)
+                    or (keyType == lskType.lskLegacyAudios)
             ):
                 count = map.stream.readUInt32()
                 for i in range(count):
@@ -210,6 +225,17 @@ class MapData(BaseObject):  # nocov
                 recentMasksKey = map.stream.readUInt64()
                 archivedMasksKey = map.stream.readUInt64()
 
+            elif keyType == lskType.lskCustomEmojiKeys:
+                installedCustomEmojiKey = map.stream.readUInt64()
+                featuredCustomEmojiKey = map.stream.readUInt64()
+                archivedCustomEmojiKey = map.stream.readUInt64()
+
+            elif keyType == lskType.lskSearchSuggestions:
+                searchSuggestionsKey = map.stream.readUInt64()
+
+            elif keyType == lskType.lskWebviewTokens:
+                is_finished = True
+
             else:
                 logging.warning(f"Unknown key type in encrypted map: {keyType}")
 
@@ -233,6 +259,12 @@ class MapData(BaseObject):  # nocov
         self._installedMasksKey = installedMasksKey
         self._recentMasksKey = recentMasksKey
         self._archivedMasksKey = archivedMasksKey
+        self._installedCustomEmojiKey = installedCustomEmojiKey
+        self._featuredCustomEmojiKey = featuredCustomEmojiKey
+        self._archivedCustomEmojiKey = archivedCustomEmojiKey
+        self._searchSuggestionsKey = searchSuggestionsKey
+        self._webviewStorageTokenBots = webviewStorageTokenBots
+        self._webviewStorageTokenOther = webviewStorageTokenOther
         self._legacyBackgroundKeyDay = legacyBackgroundKeyDay
         self._legacyBackgroundKeyNight = legacyBackgroundKeyNight
         self._settingsKey = userSettingsKey
@@ -251,7 +283,7 @@ class MapData(BaseObject):  # nocov
             mapSize += sizeof(uint32) * 2 + len(self._draftsMap) * sizeof(uint64) * 2
         if len(self._draftCursorsMap) > 0:
             mapSize += (
-                sizeof(uint32) * 2 + len(self._draftCursorsMap) * sizeof(uint64) * 2
+                    sizeof(uint32) * 2 + len(self._draftCursorsMap) * sizeof(uint64) * 2
             )
         if self._locationsKey:
             mapSize += sizeof(uint32) + sizeof(uint64)
@@ -260,10 +292,10 @@ class MapData(BaseObject):  # nocov
         if self._recentStickersKeyOld:
             mapSize += sizeof(uint32) + sizeof(uint64)
         if (
-            self._installedStickersKey
-            or self._featuredStickersKey
-            or self._recentStickersKey
-            or self._archivedStickersKey
+                self._installedStickersKey
+                or self._featuredStickersKey
+                or self._recentStickersKey
+                or self._archivedStickersKey
         ):
             mapSize += sizeof(uint32) + 4 * sizeof(uint64)
 
@@ -279,6 +311,12 @@ class MapData(BaseObject):  # nocov
             mapSize += sizeof(uint32) + sizeof(uint64)
         if self._installedMasksKey or self._recentMasksKey or self._archivedMasksKey:
             mapSize += sizeof(uint32) + 3 * sizeof(uint64)
+        if self._installedCustomEmojiKey or self._featuredCustomEmojiKey or self._archivedCustomEmojiKey:
+            mapSize += sizeof(uint32) + 3 * sizeof(uint64)
+        if self._searchSuggestionsKey:
+            mapSize += sizeof(uint32) + sizeof(uint64)
+        if self._webviewStorageTokenBots or self._webviewStorageTokenOther:
+            mapSize += sizeof(uint32) + 2 * sizeof(uint64)
 
         mapData = td.Storage.EncryptedDescriptor(mapSize)
         stream = mapData.stream
@@ -310,10 +348,10 @@ class MapData(BaseObject):  # nocov
             stream.writeUInt64(self._recentStickersKeyOld)
 
         if (
-            self._installedStickersKey
-            or self._featuredStickersKey
-            or self._recentStickersKey
-            or self._archivedStickersKey
+                self._installedStickersKey
+                or self._featuredStickersKey
+                or self._recentStickersKey
+                or self._archivedStickersKey
         ):
             stream.writeUInt32(lskType.lskStickersKeys)
             stream.writeUInt64(self._installedStickersKey)
@@ -346,6 +384,21 @@ class MapData(BaseObject):  # nocov
             stream.writeUInt64(self._installedMasksKey)
             stream.writeUInt64(self._recentMasksKey)
             stream.writeUInt64(self._archivedMasksKey)
+
+        if self._installedCustomEmojiKey or self._featuredCustomEmojiKey or self._archivedCustomEmojiKey:
+            stream.writeUInt32(lskType.lskCustomEmojiKeys)
+            stream.writeUInt64(self._installedCustomEmojiKey)
+            stream.writeUInt64(self._featuredCustomEmojiKey)
+            stream.writeUInt64(self._archivedCustomEmojiKey)
+
+        if self._searchSuggestionsKey:
+            stream.writeUInt32(lskType.lskSearchSuggestions)
+            stream.writeUInt64(self._searchSuggestionsKey)
+
+        if self._webviewStorageTokenBots or self._webviewStorageTokenOther:
+            stream.writeUInt32(lskType.lskWebviewTokens)
+            stream.writeUInt64(self._webviewStorageTokenBots)
+            stream.writeUInt64(self._webviewStorageTokenOther)
 
         return mapData
 
@@ -449,7 +502,8 @@ class StorageAccount(BaseObject):  # nocov
         # Intended for internal usage only
 
         # mtp = ReadEncryptedFile(ToFilePart(self.__dataNameKey), self.__basePath, self.localKey)
-        mtp = td.Storage.ReadEncryptedFile(td.Storage.ToFilePart(self.__dataNameKey), self.__baseGlobalPath, self.localKey)  # type: ignore
+        mtp = td.Storage.ReadEncryptedFile(td.Storage.ToFilePart(self.__dataNameKey), self.__baseGlobalPath,
+                                           self.localKey)  # type: ignore
 
         blockId = mtp.stream.readInt32()
 
@@ -481,7 +535,7 @@ class StorageAccount(BaseObject):  # nocov
         return td.MTP.Config(td.MTP.Environment.Production)
 
     def readMapWith(
-        self, localKey: td.AuthKey, legacyPasscode: QByteArray = QByteArray()
+            self, localKey: td.AuthKey, legacyPasscode: QByteArray = QByteArray()
     ):
         # Intended for internal usage only
         try:
@@ -609,12 +663,12 @@ class Account(BaseObject):
     kWideIdsTag: int = int(~0)
 
     def __init__(
-        self,
-        owner: td.TDesktop,
-        basePath: str = None,
-        api: Union[Type[APIData], APIData] = API.TelegramDesktop,
-        keyFile: str = None,
-        index: int = 0,
+            self,
+            owner: td.TDesktop,
+            basePath: str = None,
+            api: Union[Type[APIData], APIData] = API.TelegramDesktop,
+            keyFile: str = None,
+            index: int = 0,
     ) -> None:
         """
         Initialized a `TDesktop` account.
@@ -656,7 +710,7 @@ class Account(BaseObject):
 
         self.__mtpKeys: typing.List[td.AuthKey] = []
         self.__mtpKeysToDestroy: typing.List[td.AuthKey] = []
-        self.api = api.copy()
+        self.api = api
 
         self._local = StorageAccount(
             self, self.basePath, td.Storage.ComposeDataString(self.__keyFile, index)
@@ -770,11 +824,11 @@ class Account(BaseObject):
         return self.__MtpConfig
 
     def _setMtpAuthorizationCustom(
-        self,
-        dcId: DcId,
-        userId: int,
-        mtpKeys: List[td.AuthKey],
-        mtpKeysToDestroy: List[td.AuthKey] = [],
+            self,
+            dcId: DcId,
+            userId: int,
+            mtpKeys: List[td.AuthKey],
+            mtpKeysToDestroy: List[td.AuthKey] = [],
     ):
         # Intended for internal usage only
 
@@ -861,7 +915,6 @@ class Account(BaseObject):
             return 4 + len(list) * (4 + td.AuthKey.kSize)
 
         def writeKeys(stream: QDataStream, keys: typing.List[td.AuthKey]):
-
             stream.writeInt32(len(keys))
             for key in keys:
                 stream.writeInt32(key.dcId)
@@ -885,7 +938,7 @@ class Account(BaseObject):
         self._local._writeData(baseGlobalPath, keyFile)
 
     def SaveTData(
-        self, basePath: str = None, passcode: str = None, keyFile: str = None
+            self, basePath: str = None, passcode: str = None, keyFile: str = None
     ) -> None:
         """
         Save this account to a folder
@@ -925,47 +978,47 @@ class Account(BaseObject):
 
     @typing.overload
     async def ToTelethon(
-        self,
-        session: Union[str, Session] = None,
-        flag: Type[LoginFlag] = CreateNewSession,
-        api: Union[Type[APIData], APIData] = API.TelegramDesktop,
-        password: str = None,
+            self,
+            session: Union[str, Session] = None,
+            flag: Type[LoginFlag] = CreateNewSession,
+            api: Union[Type[APIData], APIData] = API.TelegramDesktop,
+            password: str = None,
     ) -> tl.TelegramClient:
         pass
 
     @typing.overload
     async def ToTelethon(
-        self,
-        session: Union[str, Session] = None,
-        flag: Type[LoginFlag] = CreateNewSession,
-        api: Union[Type[APIData], APIData] = API.TelegramDesktop,
-        password: str = None,
-        *,
-        connection: typing.Type[Connection] = ConnectionTcpFull,
-        use_ipv6: bool = False,
-        proxy: Union[tuple, dict] = None,
-        local_addr: Union[str, tuple] = None,
-        timeout: int = 10,
-        request_retries: int = 5,
-        connection_retries: int = 5,
-        retry_delay: int = 1,
-        auto_reconnect: bool = True,
-        sequential_updates: bool = False,
-        flood_sleep_threshold: int = 60,
-        raise_last_call_error: bool = False,
-        loop: asyncio.AbstractEventLoop = None,
-        base_logger: Union[str, logging.Logger] = None,
-        receive_updates: bool = True,
+            self,
+            session: Union[str, Session] = None,
+            flag: Type[LoginFlag] = CreateNewSession,
+            api: Union[Type[APIData], APIData] = API.TelegramDesktop,
+            password: str = None,
+            *,
+            connection: typing.Type[Connection] = ConnectionTcpFull,
+            use_ipv6: bool = False,
+            proxy: Union[tuple, dict] = None,
+            local_addr: Union[str, tuple] = None,
+            timeout: int = 10,
+            request_retries: int = 5,
+            connection_retries: int = 5,
+            retry_delay: int = 1,
+            auto_reconnect: bool = True,
+            sequential_updates: bool = False,
+            flood_sleep_threshold: int = 60,
+            raise_last_call_error: bool = False,
+            loop: asyncio.AbstractEventLoop = None,
+            base_logger: Union[str, logging.Logger] = None,
+            receive_updates: bool = True,
     ) -> tl.TelegramClient:
         pass
 
     async def ToTelethon(
-        self,
-        session: Union[str, Session] = None,
-        flag: Type[LoginFlag] = CreateNewSession,
-        api: Union[Type[APIData], APIData] = API.TelegramDesktop,
-        password: str = None,
-        **kwargs,
+            self,
+            session: Union[str, Session] = None,
+            flag: Type[LoginFlag] = CreateNewSession,
+            api: Union[Type[APIData], APIData] = API.TelegramDesktop,
+            password: str = None,
+            **kwargs,
     ) -> tl.TelegramClient:
 
         Expects(
@@ -981,11 +1034,11 @@ class Account(BaseObject):
 
     @staticmethod
     async def FromTelethon(
-        telethonClient: tl.TelegramClient,
-        flag: Type[LoginFlag] = CreateNewSession,
-        api: Union[Type[APIData], APIData] = API.TelegramDesktop,
-        password: str = None,
-        owner: td.TDesktop = None,
+            telethonClient: tl.TelegramClient,
+            flag: Type[LoginFlag] = CreateNewSession,
+            api: Union[Type[APIData], APIData] = API.TelegramDesktop,
+            password: str = None,
+            owner: td.TDesktop = None,
     ):
 
         Expects(
@@ -1019,12 +1072,12 @@ class Account(BaseObject):
         dcId = DcId(ss.dc_id)
         userId = copy.UserId
         authKey = td.AuthKey(authKey, td.AuthKeyType.ReadFromFile, dcId)
-        
+
         if userId == None:
             await copy.connect()
             await copy.get_me()
             userId = copy.UserId
-            
+
         newAccount = None
 
         if owner != None:
